@@ -1,4 +1,4 @@
-from setuptools import setup
+from distutils.core import setup
 
 setup(
     name='boto_utils',
@@ -9,7 +9,6 @@ setup(
     author_email='oliver@obeattie.com',
     url='https://github.com/obeattie/boto_utils',
     packages=['boto_utils'],
-    install_requires=['boto>=2.0'],
     scripts=[
         'boto_utils/ses-send-email',
         'boto_utils/ses-verify-email-address',
