@@ -1,11 +1,8 @@
+import argparse
+import os
 import re
 
-from boto.ses.connection import SESConnection
-
 LINE_RE = re.compile(r'^\s*(.*?)=(.*?)\s*$')
-
-class OptionError(Exception):
-    pass
 
 def parse_aws_credentials_file(fp):
     """Return a dictionary containing aws_access_key_id and aws_secret_access_key, given a file to a credentials file
@@ -16,6 +13,7 @@ def parse_aws_credentials_file(fp):
     result = {}
     
     for line in fp:
+        line = line.strip()
         match = LINE_RE.match(line)
         if not line:
             continue
@@ -30,15 +28,15 @@ def parse_aws_credentials_file(fp):
     
     return result
 
-def get_ses_connection(options, parser):
-    """Given parsed command line options, returns an SESConnection object from the parameters."""
-    if not options.credential_file:
-        parser.error('You must specify a credentials file')
+def get_parser(*args, **kwargs):
+    """Returns an ArgumentParser preconfigured with global options."""
+    parser = argparse.ArgumentParser(*args, **kwargs)
+    parser.add_argument('-v', '--verbose', action='store_true', help='Output debugging information')
+    credentials_arg = parser.add_argument('-k', '--credentials-file', metavar='FILE', dest='credentials_file',
+                                          default='/etc/aws-credentials.txt', type=argparse.FileType('r'))
     
-    credentials = parse_aws_credentials_file(open(options.credential_file))
-    return SESConnection(
-        aws_access_key_id=credentials['aws_access_key_id'],
-        aws_secret_access_key=credentials['aws_secret_access_key'],
-        host=options.host,
-        debug=(1 if options.verbose else 0)
-    )
+    # The credential_file can be specified by setting the AWS_CREDENTIALS_FILE environment variable
+    if 'AWS_CREDENTIALS_FILE' in os.environ:
+        credentials_arg.default = os.environ['AWS_CREDENTIALS_FILE']
+    
+    return parser

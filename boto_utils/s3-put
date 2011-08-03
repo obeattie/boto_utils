@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+"""Uploads the given files on the command line to S3. Much like the s3put command which is included with Boto, but
+   allows for uploading of multiple files simultaneously, as well as uploading to a path within a bucket, instead
+   of only the bucket root."""
+import argparse
+import os.path
+import sys
+
+from boto.s3.bucket import Bucket
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
+
+from boto_utils.common import get_parser, parse_aws_credentials_file
+
+if __name__ == '__main__':
+    parser = get_parser(description='Upload files to Amazon S3')
+    parser.add_argument('-b', '--bucket', metavar='BUCKET', dest='bucket', required=True,
+                        help='Store files in BUCKET')
+    parser.add_argument('--replace', default=False, action='store_true',
+                        help='Replace existing files')
+    parser.add_argument('source', metavar='FILE', type=argparse.FileType('r'), nargs='+',
+                        help='Files to be uploaded')
+    parser.add_argument('-d', '--dest', metavar='PATH', nargs='?',
+                        help='Path inside the bucket to upload the files')
+    
+    args = parser.parse_args()
+    credentials = parse_aws_credentials_file(args.credentials_file)
+    s3 = S3Connection(
+        debug=(2 if args.verbose else 0),
+        **credentials
+    )
+    bucket = Bucket(connection=s3, name=args.bucket)
+    
+    for f in args.source:
+        dest = os.path.join((args.dest or ''), os.path.split(f.name)[1])
+        # If we're not allowed to replace, check for existence first
+        if not args.replace:
+            assert not bucket.lookup(dest), 'file already exists at destination; specify --replace to overwrite'
+        # Now, do the actual uploading
+        key = Key(bucket=bucket, name=dest)
+        key.set_contents_from_file(f, replace=args.replace)
+        print 'Successfully uploaded %s to %s:%s' % (f.name, args.bucket, dest)
+    
+    sys.exit(0)

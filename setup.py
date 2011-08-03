@@ -1,16 +1,17 @@
 from distutils.core import setup
 
 setup(
-    name='boto_ses_tools',
+    name='boto_utils',
     version='0.1',
-    description='Command-line tools based on Boto intended to replace the SES command-line tools provided by Amazon ' \
-        '(which are just ridiculously complex to get installed under Debian)',
+    description='Command-line tools based on Boto',
+    long_description=open('description.rst', 'r').read(),
     author='Oliver Beattie',
     author_email='oliver@obeattie.com',
     url='https://github.com/obeattie/boto-ses-tools',
-    packages=['boto_ses_tools'],
+    packages=['boto_utils'],
     scripts=[
-        'boto_ses_tools/ses-send-email.py',
-        'boto_ses_tools/ses-verify-email-address.py',
+        'boto_utils/ses-send-email',
+        'boto_utils/ses-verify-email-address',
+        'boto_utils/s3-put',
     ]
 )

@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+"""SES address verification tool. Closely mimicks the ses-verify-email-address.pl script provided by Amazon."""
+import sys
+
+from boto_utils.common import get_parser
+from boto_utils.ses import get_ses_connection
+
+if __name__ == '__main__':
+    parser = get_parser(description='Manage verified SES addresses')
+    parser.add_argument('-e', '--endpoint', dest='host', default='email.us-east-1.amazonaws.com',
+                        help='Use the specified Amazon SES endpoint')
+    
+    action_group = parser.add_mutually_exclusive_group(required=True)
+    action_group.add_argument('-verify', dest='verify', help='Requests verification of an email address')
+    action_group.add_argument('-list', dest='list', help='Lists the email addresses that you have already verified',
+                              action='store_true')
+    action_group.add_argument('-delete', dest='delete', help='Deletes a verified email address')
+    
+    args = parser.parse_args()
+    ses = get_ses_connection(args)
+    
+    # Do the work
+    if args.verify:
+        ses.verify_email_address(args.verify)
+    if args.list:
+        response = ses.list_verified_email_addresses()
+        # How nasty is this?
+        addresses = response['ListVerifiedEmailAddressesResponse']['ListVerifiedEmailAddressesResult']['VerifiedEmailAddresses']
+        for address in addresses:
+            print address
+    if args.delete:
+        ses.delete_verified_email_address(args.delete)
+    
+    sys.exit(0)

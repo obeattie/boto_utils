@@ -1,0 +1,25 @@
+#!/usr/bin/env python
+"""SES email interface. Closely mimicks the interface of ses-send-email.pl provided by Amazon, but it should be noted
+   that only raw mode is supported (not passing -r will result in an error just to be sure).
+   
+   Reads body from stdin."""
+import sys
+
+from boto_utils.common import get_parser
+from boto_utils.ses import get_ses_connection
+
+if __name__ == '__main__':
+    parser = get_parser(description='Send an email via Amazon SES')
+    parser.add_argument('-e', '--endpoint', dest='host', default='email.us-east-1.amazonaws.com',
+                        help='Use the specified Amazon SES endpoint')
+    parser.add_argument('-r', '--raw', dest='raw', action='store_true', required=True,
+                        help='Send a raw email message, reading from stdin (MANDATORY)')
+    parser.add_argument('sender', nargs=1, help='Sender\'s email address')
+    parser.add_argument('recipients', nargs='+', help='Recipients\' email addresses')
+    
+    args = parser.parse_args()
+    ses = get_ses_connection(args)
+    body = sys.stdin.read()
+    
+    ses.send_raw_email(raw_message=body, source=args.sender[0], destinations=args.recipients)
+    sys.exit(0)
