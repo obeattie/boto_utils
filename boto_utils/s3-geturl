@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+"""Outputs signed URLs to S3 objects."""
+import argparse
+import sys
+
+from boto.s3.bucket import Bucket
+from boto.s3.connection import S3Connection
+from boto.s3.key import Key
+
+from boto_utils.common import parse_aws_credentials_file, get_parser
+
+def s3_path(path_string):
+    try:
+        result = path_string.split(':', 1)
+        return (result[0], result[1])
+    except IndexError:
+        raise argparse.ArgumentTypeError('paths must be in the format <bucket>:<path>')
+
+if __name__ == '__main__':
+    parser = get_parser(description='Outputs signed URLs to S3 objects')
+    parser.add_argument('paths', nargs='+', metavar='bucket:path', type=s3_path,
+                        help='Paths to files on S3. Should be in the format <bucket>:<path>')
+    parser.add_argument('--expires', required=False, default=86400, type=long, dest='expires_in',
+                        help='How many seconds the URL should be valid for, in seconds. Defaults to 24 hours.')
+    
+    args = parser.parse_args()
+    credentials = parse_aws_credentials_file(args.credentials_file)
+    s3 = S3Connection(
+        debug=(2 if args.verbose else 0),
+        **credentials
+    )
+    
+    for bucket, path in args.paths:
+        bucket = Bucket(connection=s3, name=bucket)
+        key = Key(bucket=bucket, name=path)
+        print key.generate_url(expires_in=args.expires_in)
+    
+    sys.exit(0)

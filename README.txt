@@ -3,7 +3,8 @@ Command-line tools for interacting with Amazon Web Services, based on `Boto <htt
 Currently included are:
 
 * ``s3-put``: Upload file(s) to S3. Built to replace Boto's ``s3put`` command, allowing placement of files inside
-  directories within buckets.
+  directories within buckets. Also allows recursive upload of entire directories.
+* ``s3-geturl``: Outputs signed (authenticated) S3 urls to objects which expire after a specified time
 * ``ses-send-email``: Send an email via `SES <http://aws.amazon.com/ses/>`_. Replacement for the ``ses-send-email.pl`` 
   script provided `by Amazon <http://aws.amazon.com/developertools/Amazon-SES/8945574369528337>`_, which is a (ahem) a
   total nightmare to get running; and installing unpackaged source code manually just makes me uncomfortable.
