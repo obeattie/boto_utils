@@ -56,7 +56,7 @@ if __name__ == '__main__':
                 assert not bucket.lookup(dest), 'file already exists at destination; specify --replace to overwrite'
             # Now, do the actual uploading
             key = Key(bucket=bucket, name=dest)
-            #key.set_contents_from_file(f, replace=args.replace)
+            key.set_contents_from_file(f, replace=args.replace)
             print 'Successfully uploaded %s to %s:%s' % (f.name, args.bucket, dest)
     
     sys.exit(0)
