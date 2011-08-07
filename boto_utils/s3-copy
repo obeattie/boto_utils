@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+"""Copies files within S3; from one location to a new location."""
+import argparse
+import os
+import sys
+
+from boto.s3.bucket import Bucket
+from boto.s3.connection import S3Connection
+
+from boto_utils.common import get_parser, parse_aws_credentials_file
+
+if __name__ == '__main__':
+    parser = get_parser(description='Copy files within S3')
+    parser.add_argument('-b', '--bucket', metavar='BUCKET', dest='bucket', required=True,
+                        help='Store files in BUCKET')
+    parser.add_argument('--replace', default=False, action='store_true',
+                        help='Replace existing files')
+    parser.add_argument('source', metavar='PATH',
+                        help='Source prefix (a file, or a prefix if -r is specified)')
+    parser.add_argument('dest', metavar='PATH',
+                        help='Destination to copy the file(s) to')
+    parser.add_argument('-r', '--recursive', action='store_true',
+                        help='Recursively copy all keys with the source prefix specified')
+    parser.add_argument('--dest-bucket', dest='dest_bucket',
+                        help='The destination bucket (defaults to the source bucket)')
+    parser.add_argument('--preserve-acl', dest='preserve_acl',
+                        help='Preserve the ACL of the source objects, instead of them having the default ACL')
+    
+    args = parser.parse_args()
+    credentials = parse_aws_credentials_file(args.credentials_file)
+    s3 = S3Connection(
+        debug=(2 if args.verbose else 0),
+        **credentials
+    )
+    bucket = Bucket(connection=s3, name=args.bucket)
+    dest_bucket = (bucket if not args.dest_bucket else Bucket(connection=s3, name=args.dest_bucket))
+    
+    # Build a list of 2-tuples: (source_key, dest_key)
+    if args.recursive:
+        to_copy = []
+        for f in bucket.list(prefix=args.source):
+            to_copy.append((f.name, os.path.join(args.dest, os.path.relpath(f.name, args.source))))
+    else:
+        assert args.source and bucket.get_key(args.source), 'source file does not exist'
+        to_copy = [(args.source, args.dest)]
+    
+    for source, dest in to_copy:
+        if not args.replace:
+            assert not dest_bucket.lookup(dest), 'file %s already exists at destination; specify --replace to ' \
+                'overwrite' % dest
+        
+        print 'Copying %s:%s to %s:%s' % (bucket.name, source, dest_bucket.name, dest)
+        dest_bucket.copy_key(dest, args.bucket, source, preserve_acl=args.preserve_acl)
+    
+    sys.exit(0)
