@@ -3,6 +3,7 @@
    allows for uploading of multiple files simultaneously, as well as uploading to a path within a bucket, instead
    of only the bucket root."""
 import argparse
+import glob
 import os
 import sys
 
@@ -34,8 +35,12 @@ if __name__ == '__main__':
     bucket = Bucket(connection=s3, name=args.bucket)
     
     # Build a list of the files to be uploaded and the paths where they should be uploaded
+    source = []
+    for p in args.source:
+        source.extend(glob.glob(p))
+    
     files = []
-    for f in args.source:
+    for f in source:
         if os.path.isdir(f):
             if not args.recursive:
                 parser.error('%r is a directory. To upload directories recursively, specify -r' % f)
@@ -45,13 +50,14 @@ if __name__ == '__main__':
                     filename = os.path.join(dirpath, filename)
                     files.append((filename, os.path.relpath(filename, f)))
         else:
-            assert os.path.exists(f)
+            assert os.path.exists(f), '%s does not exist' % f
             files.append((f, ''))
     
     for f, path in files:
         with open(f, 'rb') as f:
             dest = os.path.join((args.dest or ''), path)
             # If we're not allowed to replace, check for existence first
+            print dest
             if not args.replace:
                 assert not bucket.lookup(dest), 'file already exists at destination; specify --replace to overwrite'
             # Now, do the actual uploading
