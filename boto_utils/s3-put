@@ -17,14 +17,19 @@ if __name__ == '__main__':
     parser = get_parser(description='Upload files to Amazon S3')
     parser.add_argument('-b', '--bucket', metavar='BUCKET', dest='bucket', required=True,
                         help='Store files in BUCKET')
-    parser.add_argument('--replace', default=False, action='store_true',
-                        help='Replace existing files')
     parser.add_argument('source', metavar='PATH', nargs='+',
                         help='Files to be uploaded (directories too if -r is specified)')
     parser.add_argument('-d', '--dest', metavar='PATH', nargs='?',
                         help='Path inside the bucket to upload the files')
     parser.add_argument('-r', '--recursive', action='store_true',
                         help='If a directory is passed, recursively upload the entire contents')
+    # --replace and --fail-if-exists are mutually exclusive
+    replace_group = parser.add_mutually_exclusive_group(required=False)
+    replace_group.add_argument('--replace', default=False, action='store_true',
+                               help='Replace existing files')
+    replace_group.add_argument('--fail-if-exists', dest='fail_if_exists', default=False, action='store_true',
+                               help='Fail with an error if any of the files already exist at the destination (by ' \
+                               'default a warning will be printed, but the upload won\'t be stopped)')
     
     args = parser.parse_args()
     credentials = parse_aws_credentials_file(args.credentials_file)
@@ -58,8 +63,13 @@ if __name__ == '__main__':
             dest = os.path.join((args.dest or ''), path)
             # If we're not allowed to replace, check for existence first
             print dest
-            if not args.replace:
-                assert not bucket.lookup(dest), 'file already exists at destination; specify --replace to overwrite'
+            if (not args.replace) and bucket.lookup(dest):
+                if args.fail_if_exists:
+                    print 'File already exists at destination; exiting since you specified --fail-if-exists'
+                    sys.exit(2)
+                else:
+                    print 'File already exists at destination; skipping. specify --replace to overwrite'
+                    continue
             # Now, do the actual uploading
             key = Key(bucket=bucket, name=dest)
             key.set_contents_from_file(f, replace=args.replace)
