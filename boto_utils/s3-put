@@ -51,7 +51,7 @@ if __name__ == '__main__':
                     files.append((filename, os.path.relpath(filename, f)))
         else:
             assert os.path.exists(f), '%s does not exist' % f
-            files.append((f, ''))
+            files.append((f, os.path.basename(f)))
     
     for f, path in files:
         with open(f, 'rb') as f:
