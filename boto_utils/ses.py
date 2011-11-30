@@ -5,8 +5,4 @@ from boto_utils.common import parse_aws_credentials_file
 def get_ses_connection(args):
 	"""Given a set of parsed arguments, returns an SESConnection."""
 	credentials = parse_aws_credentials_file(args.credentials_file)
-	return SESConnection(
-		region=args.region,
-		debug=(2 if args.verbose else 0),
-		**credentials
-	)
+	return SESConnection(debug=(2 if args.verbose else 0), **credentials)
