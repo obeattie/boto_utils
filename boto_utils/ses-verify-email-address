@@ -8,7 +8,7 @@ from boto_utils.ses import get_ses_connection
 
 if __name__ == '__main__':
     parser = get_parser(description='Manage verified SES addresses')
-    parser.add_argument('-e', '--endpoint', dest='region', type=boto.regioninfo.RegionInfo,
+    parser.add_argument('-e', '--endpoint', dest='region',
                         default='email.us-east-1.amazonaws.com',
                         help='Use the specified Amazon SES endpoint')
     
