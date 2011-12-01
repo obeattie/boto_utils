@@ -13,8 +13,10 @@ def parse_aws_credentials_file(fp):
     result = {}
     
     for line in fp:
+
         line = line.strip()
         match = LINE_RE.match(line)
+
         if not line:
             continue
         elif not match:
@@ -30,13 +32,17 @@ def parse_aws_credentials_file(fp):
 
 def get_parser(*args, **kwargs):
     """Returns an ArgumentParser preconfigured with global options."""
+
     parser = argparse.ArgumentParser(*args, **kwargs)
-    parser.add_argument('-v', '--verbose', action='store_true', help='Output debugging information')
-    credentials_arg = parser.add_argument('-k', '--credentials-file', metavar='FILE', dest='credentials_file',
-                                          default='/etc/aws-credentials.txt', type=argparse.FileType('r'),
-                                          help='Path to your AWS credentials file (default: /etc/aws-credentials.txt)')
+    parser.add_argument('-v', '--verbose', action='store_true',
+        help='Output debugging information')
+    credentials_arg = parser.add_argument('-k', '--credentials-file',
+        metavar='FILE', dest='credentials_file',
+        type=argparse.FileType('r'),
+        help='Path to your AWS credentials file (default: /etc/aws-credentials.txt)')
     
-    # The credential_file can be specified by setting the AWS_CREDENTIALS_FILE environment variable
+    # The credential_file can be specified by setting the AWS_CREDENTIALS_FILE
+    # environment variable
     if 'AWS_CREDENTIALS_FILE' in os.environ:
         credentials_arg.default = os.environ['AWS_CREDENTIALS_FILE']
     

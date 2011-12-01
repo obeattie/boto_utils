@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 """SES address verification tool. Closely mimicks the ses-verify-email-address.pl script provided by Amazon."""
-import sys
+import sys, boto
 
+from os import path
 from boto_utils.common import get_parser
 from boto_utils.ses import get_ses_connection
 
 if __name__ == '__main__':
     parser = get_parser(description='Manage verified SES addresses')
-    parser.add_argument('-e', '--endpoint', dest='host', default='email.us-east-1.amazonaws.com',
+    parser.add_argument('-e', '--endpoint', dest='region',
+                        default='email.us-east-1.amazonaws.com',
                         help='Use the specified Amazon SES endpoint')
     
     action_group = parser.add_mutually_exclusive_group(required=True)
@@ -15,8 +17,16 @@ if __name__ == '__main__':
     action_group.add_argument('-list', dest='list', help='Lists the email addresses that you have already verified',
                               action='store_true')
     action_group.add_argument('-delete', dest='delete', help='Deletes a verified email address')
-    
-    args = parser.parse_args()
+
+    # Attempt to parse and load options    
+    try:
+        args = parser.parse_args()
+    except IOError as e:
+        print "{0} - Unable to open credentials file: {1}\n".format(
+            path.basename(sys.argv[0]), e.filename)
+        parser.print_help()
+        sys.exit(1)
+
     ses = get_ses_connection(args)
     
     # Do the work
