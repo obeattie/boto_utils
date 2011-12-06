@@ -4,7 +4,7 @@ setup(
     name='boto_utils',
     version='0.1.7',
     description='Command-line tools based on Boto',
-    long_description=open('README.txt', 'r').read(),
+    long_description=open('README.rst', 'r').read(),
     author='Oliver Beattie',
     author_email='oliver@obeattie.com',
     url='https://github.com/obeattie/boto_utils',
