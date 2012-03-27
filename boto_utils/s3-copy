@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 """Copies files within S3; from one location to a new location."""
-import argparse
 import os
 import sys
 

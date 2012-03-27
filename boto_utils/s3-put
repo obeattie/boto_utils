@@ -2,7 +2,6 @@
 """Uploads the given files on the command line to S3. Much like the s3put command which is included with Boto, but
    allows for uploading of multiple files simultaneously, as well as uploading to a path within a bucket, instead
    of only the bucket root."""
-import argparse
 import glob
 import os
 import sys

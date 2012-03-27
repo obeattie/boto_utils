@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+"""Deletes the given files from S3."""
+import glob
+import os
+import sys
+
+from boto.s3.bucket import Bucket
+from boto.s3.connection import S3Connection
+
+from boto_utils.common import get_parser, parse_aws_credentials_file
+
+if __name__ == '__main__':
+    parser = get_parser(description='Delete files from Amazon S3')
+    parser.add_argument('-b', '--bucket', metavar='BUCKET', dest='bucket', required=True,
+                        help='Delete files stored in BUCKET')
+    parser.add_argument('paths', metavar='PATH', nargs='+',
+                        help='Paths to be removed')
+    
+    args = parser.parse_args()
+    credentials = parse_aws_credentials_file(args.credentials_file)
+    s3 = S3Connection(
+        debug=(2 if args.verbose else 0),
+        **credentials
+    )
+    bucket = Bucket(connection=s3, name=args.bucket)
+    
+    bucket.delete_keys(args.paths)
+    print 'Deleted.'
+    sys.exit(0)
