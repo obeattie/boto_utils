@@ -15,6 +15,7 @@ Currently included are:
   transport under Postfix (using ``PIPE``)
 * ``ses-verify-email-address``: Manage verified SES email addresses. Pretty much a drop-in replacement for the tool
   provided by Amazon in the SES developer tools.
+* ``cloudwatch-put-metric``: Put metric data to CloudWatch
 
 All scripts are made to parse a credentials file, which will be in the same format as that expected by some AWS tools.
 Details `here <http://docs.amazonwebservices.com/ses/latest/DeveloperGuide/index.html?InitialSetup.Scripts.html>`_. By 
