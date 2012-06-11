@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+"""PUTs a metric to CloudWatch."""
+
+import datetime
+import email
+import re
+import sys
+
+import boto
+import pytz
+from boto.ec2.cloudwatch.metric import Metric
+
+from boto_utils.common import get_parser, parse_aws_credentials_file
+
+DICT_VALUE_RE = re.compile(r'^([^=]+)=(.+)$')
+
+def parse_dimension(val):
+    match = DICT_VALUE_RE.match(val)
+    assert match, 'Could not parse %r; should be in the form key=value' % val
+    return (match.group(1), (match.group(2) or None))
+
+def parse_datetime(val):
+    """Parse an RFC 2822 formatted datetime string."""
+    if val:
+        parsed = email.Utils.parsedate_tz(val)
+        parsed_utc = email.Utils.mktime_tz(parsed)
+        return datetime.datetime.fromtimestamp(timestamp=parsed_utc, tz=pytz.utc)
+    return None
+
+if __name__ == '__main__':
+    parser = get_parser(description='Put a metric to CloudWatch')
+    parser.add_argument('namespace', help='The namespace of the metric')
+    parser.add_argument('name', help='The name of the metric')
+    parser.add_argument('value', help='The value for the metric', type=float)
+    parser.add_argument('--timestamp', required=False, type=parse_datetime,
+                        help='The time stamp used for the metric (RFC 2822 formatted). If not specified, the default ' \
+                             'value is set to the time the metric data was received')
+    parser.add_argument('--unit', required=False, choices=[u for u in Metric.Units if u is not None],
+                        help='The unit of the metric')
+    parser.add_argument('--dimension', nargs='*', type=parse_dimension, default=[], dest='dimensions',
+                        help='Extra name value pairs to associate with the metric. Note some special values can be ' \
+                             'substituted by using dictionary formatting syntax: %(ec2_instance_id)s. The keys ' \
+                             'available are the ones reported by facter (if installed)')
+    
+    args = parser.parse_args()
+    credentials = parse_aws_credentials_file(args.credentials_file)
+    
+    cloudwatch = boto.connect_cloudwatch(
+        debug=(2 if args.verbose else 0),
+        **credentials
+    )
+    cloudwatch.put_metric_data(
+        namespace=args.namespace,
+        name=args.name,
+        value=args.value,
+        timestamp=args.timestamp,
+        unit=args.unit,
+        dimensions=dict(args.dimensions)
+    )
+    
+    sys.exit(0)

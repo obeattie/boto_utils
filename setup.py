@@ -9,7 +9,7 @@ setup(
     author_email='oliver@obeattie.com',
     url='https://github.com/obeattie/boto_utils',
     packages=['boto_utils'],
-    install_requires=['boto>=2.2.0'],
+    install_requires=['boto>=2.2.0', 'pytz'],
     scripts=[
         'boto_utils/ses-send-email',
         'boto_utils/ses-verify-email-address',
