@@ -4,20 +4,33 @@
 import datetime
 import email
 import re
+import subprocess
 import sys
 
 import boto
 import pytz
+import yaml
+from boto.ec2.cloudwatch import RegionData, regions
 from boto.ec2.cloudwatch.metric import Metric
 
 from boto_utils.common import get_parser, parse_aws_credentials_file
 
 DICT_VALUE_RE = re.compile(r'^([^=]+)=(.+)$')
+REGIONS = regions()
+
+def facter_facts():
+    """Returns a dictionary of facts from Facter (if installed)."""
+    try:
+        return yaml.load(subprocess.check_output(('facter', '--yaml')))
+    except Exception:
+        return {}
 
 def parse_dimension(val):
     match = DICT_VALUE_RE.match(val)
     assert match, 'Could not parse %r; should be in the form key=value' % val
-    return (match.group(1), (match.group(2) or None))
+    key, value = match.groups()
+    value = value % facter_facts()
+    return (key, value)
 
 def parse_datetime(val):
     """Parse an RFC 2822 formatted datetime string."""
@@ -26,6 +39,12 @@ def parse_datetime(val):
         parsed_utc = email.Utils.mktime_tz(parsed)
         return datetime.datetime.fromtimestamp(timestamp=parsed_utc, tz=pytz.utc)
     return None
+
+def get_region(name):
+    """Given a region name, return the associated RegionInfo instance."""
+    for region in REGIONS:
+        if region.name == name:
+            return region
 
 if __name__ == '__main__':
     parser = get_parser(description='Put a metric to CloudWatch')
@@ -41,12 +60,15 @@ if __name__ == '__main__':
                         help='Extra name value pairs to associate with the metric. Note some special values can be ' \
                              'substituted by using dictionary formatting syntax: %(ec2_instance_id)s. The keys ' \
                              'available are the ones reported by facter (if installed)')
+    parser.add_argument('--region', required=False, choices=REGIONS, type=get_region,
+                        help='The region to connect to')
     
     args = parser.parse_args()
     credentials = parse_aws_credentials_file(args.credentials_file)
     
     cloudwatch = boto.connect_cloudwatch(
         debug=(2 if args.verbose else 0),
+        region=args.region,
         **credentials
     )
     cloudwatch.put_metric_data(

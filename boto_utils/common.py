@@ -30,11 +30,12 @@ def parse_aws_credentials_file(fp):
     
     return result
 
-def get_parser(*args, **kwargs):
+
+def get_parser(regions=None, *args, **kwargs):
     """Returns an ArgumentParser preconfigured with global options."""
     parser = argparse.ArgumentParser(*args, **kwargs)
     parser.add_argument('-v', '--verbose', action='store_true', help='Output debugging information')
-    credentials_arg = parser.add_argument('-k', '--credentials-file',
+    parser.add_argument('-k', '--credentials-file',
         metavar='FILE',
         dest='credentials_file',
         type=argparse.FileType('r'),
